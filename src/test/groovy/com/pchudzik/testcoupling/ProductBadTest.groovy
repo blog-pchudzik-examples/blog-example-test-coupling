@@ -20,29 +20,30 @@ class ProductBadTest extends Specification {
 
 	@Before
 	def setupTest() {
-		rootCategory1TagA = new Tag("A")
-		rootCategory1TagB = new Tag("B")
-		rootCategory2TagC = new Tag("C")
-		child1TagD = new Tag("D")
-		child1TagE = new Tag("E")
-		child2TagF = new Tag("F")
-		otherChildTagG = new Tag("G")
+		rootCategory1TagA = new Tag(name: "A")
+		rootCategory1TagB = new Tag(name: "B")
+		rootCategory2TagC = new Tag(name: "C")
+		child1TagD = new Tag(name: "D")
+		child1TagE = new Tag(name: "E")
+		child2TagF = new Tag(name: "F")
+		otherChildTagG = new Tag(name: "G")
 
-		rootCategory1 = new Category("root1", [rootCategory1TagA, rootCategory1TagB])
-		rootCategory2 = new Category("root2", [rootCategory2TagC])
-		child1OfRootCategory1 = new Category("child 1 of root1", rootCategory1, [child1TagD, child1TagE])
-		child2OfRootCategory1 = new Category("child 2 of root1", rootCategory1, [child2TagF])
-		otherChildOfRootCategory2 = new Category("other child", rootCategory2, [otherChildTagG])
+		rootCategory1 = new Category(name: "root1", tags: [rootCategory1TagA, rootCategory1TagB])
+		rootCategory2 = new Category(name: "root2", tags: [rootCategory2TagC])
+		child1OfRootCategory1 = new Category(name: "child 1 of root1", parentCategory: rootCategory1, tags: [child1TagD, child1TagE])
+		child2OfRootCategory1 = new Category(name: "child 2 of root1", parentCategory: rootCategory1, tags: [child2TagF])
+		otherChildOfRootCategory2 = new Category(name: "other child", parentCategory: rootCategory2, tags: [otherChildTagG])
+		rootCategory1.childCategories.addAll([child1OfRootCategory1, child2OfRootCategory1])
+		rootCategory2.childCategories.addAll(otherChildOfRootCategory2)
 	}
-
 
 	def "product can be assign to only one category in category tree branch"() {
 		given:
 		final product = new Product("product")
-		product.addProductCategory(rootCategory1)
+		product.addProductCategory(child2OfRootCategory1)
 
 		when:
-		product.addProductCategory(child1OfRootCategory1)
+		product.addProductCategory(rootCategory1)
 
 		then:
 		thrown(IllegalStateException)
@@ -53,7 +54,7 @@ class ProductBadTest extends Specification {
 		final product = new Product("product")
 		product.addProductCategory(child1OfRootCategory1)
 		product.addProductCategory(otherChildOfRootCategory2)
-		product.addTag(child1OfRootCategory1.tags + otherChildOfRootCategory2)
+		(child1OfRootCategory1.tags + otherChildOfRootCategory2.tags).each { product.addTag(it) }
 
 		when:
 		product.removeProductCategory(child1OfRootCategory1)
@@ -81,5 +82,15 @@ class ProductBadTest extends Specification {
 
 		expect:
 		product.possibleTags == [child1TagD, child1TagE, otherChildTagG] as Set
+	}
+
+	def "should exclude already assigned tag from possible tags"() {
+		given:
+		final product = new Product("product")
+		product.addProductCategory(child1OfRootCategory1)
+		product.addTag(child1TagD)
+
+		expect:
+		product.possibleTags == [child1TagE] as Set
 	}
 }

@@ -1,8 +1,8 @@
 package com.pchudzik.testcoupling;
 
-import lombok.RequiredArgsConstructor;
+import lombok.Data;
 
-@RequiredArgsConstructor
-public class Tag {
-	private final String name;
+@Data
+class Tag {
+	private String name;
 }
